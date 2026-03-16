@@ -1,6 +1,8 @@
 import { getIntegrationSettings } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const settings = await getIntegrationSettings();
 
@@ -35,4 +37,3 @@ export default async function SettingsPage() {
     </div>
   );
 }
-

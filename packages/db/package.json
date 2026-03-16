@@ -5,6 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
+    "@ai-evaluator/config": "file:../config",
+    "pg": "^8.13.3",
     "@ai-evaluator/types": "file:../types"
   },
   "scripts": {

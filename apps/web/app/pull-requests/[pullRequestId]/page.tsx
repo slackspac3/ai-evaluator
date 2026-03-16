@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getPullRequestById, listRuns } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
+export const dynamic = "force-dynamic";
+
 export default async function PullRequestPage({ params }: { params: Promise<{ pullRequestId: string }> }) {
   const { pullRequestId } = await params;
   const pullRequest = await getPullRequestById(pullRequestId);
@@ -45,4 +47,3 @@ export default async function PullRequestPage({ params }: { params: Promise<{ pu
     </div>
   );
 }
-

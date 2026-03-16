@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getRunById } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
+export const dynamic = "force-dynamic";
+
 export default async function RunDetailPage({ params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params;
   const run = await getRunById(runId);
@@ -85,4 +87,3 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
     </div>
   );
 }
-

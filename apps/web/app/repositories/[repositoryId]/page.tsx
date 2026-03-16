@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getRepositoryById, listPullRequests, listRuns } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
+export const dynamic = "force-dynamic";
+
 export default async function RepositoryPage({ params }: { params: Promise<{ repositoryId: string }> }) {
   const { repositoryId } = await params;
   const repository = await getRepositoryById(repositoryId);
@@ -47,4 +49,3 @@ export default async function RepositoryPage({ params }: { params: Promise<{ rep
     </div>
   );
 }
-

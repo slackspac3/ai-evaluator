@@ -1,6 +1,8 @@
 import { listRuns } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
+export const dynamic = "force-dynamic";
+
 export default async function AssertionsPage() {
   const runs = await listRuns();
   const failedAssertions = runs.flatMap((run) =>
@@ -51,4 +53,3 @@ export default async function AssertionsPage() {
     </div>
   );
 }
-

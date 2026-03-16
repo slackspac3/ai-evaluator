@@ -50,6 +50,8 @@ Deliver the core workflow of `promptfoo-action` as a standalone web product that
 
 - Shared SQL models and repository functions
 - Stores repositories, pull requests, commits, eval runs, eval cases, assertions, webhook deliveries, sync logs, and integration settings
+- Uses PostgreSQL through `pg`
+- Bootstraps the MVP schema automatically and seeds durable demo records on first run
 
 ### packages/storage
 

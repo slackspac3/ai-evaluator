@@ -7,7 +7,8 @@ import {
   listPullRequests,
   listRepositories,
   listRuns,
-  listWebhookDeliveries
+  listWebhookDeliveries,
+  recordWebhookDelivery
 } from "@ai-evaluator/db";
 
 export {
@@ -19,6 +20,6 @@ export {
   listPullRequests,
   listRepositories,
   listRuns,
-  listWebhookDeliveries
+  listWebhookDeliveries,
+  recordWebhookDelivery
 };
-

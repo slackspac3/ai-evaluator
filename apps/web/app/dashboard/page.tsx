@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getDashboardData } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const dashboard = await getDashboardData();
 
@@ -111,4 +113,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
