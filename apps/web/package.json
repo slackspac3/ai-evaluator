@@ -1,0 +1,27 @@
+{
+  "name": "@ai-evaluator/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/**/*.test.ts"
+  },
+  "dependencies": {
+    "@ai-evaluator/config": "file:../../packages/config",
+    "@ai-evaluator/db": "file:../../packages/db",
+    "@ai-evaluator/evals-promptfoo": "file:../../packages/evals/promptfoo",
+    "@ai-evaluator/integrations-github": "file:../../packages/integrations/github",
+    "@ai-evaluator/integrations-compass": "file:../../packages/integrations/compass",
+    "@ai-evaluator/logger": "file:../../packages/logger",
+    "@ai-evaluator/types": "file:../../packages/types",
+    "@ai-evaluator/ui": "file:../../packages/ui",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

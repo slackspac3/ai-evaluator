@@ -1,0 +1,17 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "rootDir": "../..",
+    "outDir": "dist",
+    "noEmit": false,
+    "baseUrl": ".",
+    "paths": {
+      "@ai-evaluator/logger": ["../../logger/src/index.ts"],
+      "@ai-evaluator/config": ["../../config/src/index.ts"],
+      "@ai-evaluator/types": ["../../types/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "../../logger/src/**/*.ts", "../../config/src/**/*.ts"]
+}

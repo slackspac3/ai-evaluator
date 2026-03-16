@@ -1,0 +1,15 @@
+{
+  "name": "@ai-evaluator/logger",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@ai-evaluator/config": "file:../config"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "echo no tests for logger"
+  }
+}

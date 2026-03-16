@@ -1,0 +1,12 @@
+.next
+node_modules
+.turbo
+.env
+.env.local
+.env.*.local
+dist
+coverage
+artifacts
+*.log
+postgres-data
+redis-data

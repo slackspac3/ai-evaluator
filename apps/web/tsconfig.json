@@ -1,0 +1,51 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@ai-evaluator/config": [
+        "../../packages/config/src/index.ts"
+      ],
+      "@ai-evaluator/db": [
+        "../../packages/db/src/index.ts"
+      ],
+      "@ai-evaluator/evals-promptfoo": [
+        "../../packages/evals/promptfoo/src/index.ts"
+      ],
+      "@ai-evaluator/integrations-github": [
+        "../../packages/integrations/github/src/index.ts"
+      ],
+      "@ai-evaluator/integrations-compass": [
+        "../../packages/integrations/compass/src/index.ts"
+      ],
+      "@ai-evaluator/logger": [
+        "../../packages/logger/src/index.ts"
+      ],
+      "@ai-evaluator/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@ai-evaluator/ui": [
+        "../../packages/ui/src/index.tsx"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "incremental": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

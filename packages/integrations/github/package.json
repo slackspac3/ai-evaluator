@@ -1,0 +1,16 @@
+{
+  "name": "@ai-evaluator/integrations-github",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "dependencies": {
+    "@ai-evaluator/logger": "file:../../logger",
+    "@ai-evaluator/types": "file:../../types"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "echo no tests for github integration"
+  }
+}

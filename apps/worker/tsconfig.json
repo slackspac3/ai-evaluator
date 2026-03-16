@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "noEmit": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@ai-evaluator/config": ["../../packages/config/src/index.ts"],
+      "@ai-evaluator/evals-promptfoo": ["../../packages/evals/promptfoo/src/index.ts"],
+      "@ai-evaluator/jobs": ["../../packages/jobs/src/index.ts"],
+      "@ai-evaluator/logger": ["../../packages/logger/src/index.ts"],
+      "@ai-evaluator/types": ["../../packages/types/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"]
+}

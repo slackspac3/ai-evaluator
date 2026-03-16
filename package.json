@@ -1,0 +1,27 @@
+{
+  "name": "ai-evaluator",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "packages/integrations/*",
+    "packages/evals/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @ai-evaluator/web",
+    "build:packages": "npm run build --workspace @ai-evaluator/types && npm run build --workspace @ai-evaluator/config && npm run build --workspace @ai-evaluator/logger && npm run build --workspace @ai-evaluator/db && npm run build --workspace @ai-evaluator/integrations-github && npm run build --workspace @ai-evaluator/integrations-compass && npm run build --workspace @ai-evaluator/evals-promptfoo && npm run build --workspace @ai-evaluator/storage && npm run build --workspace @ai-evaluator/jobs && npm run build --workspace @ai-evaluator/ui",
+    "build": "npm run build:packages && npm run build --workspace @ai-evaluator/web && npm run build --workspace @ai-evaluator/worker",
+    "lint": "npm run lint --workspace @ai-evaluator/web && npm run lint --workspace @ai-evaluator/worker",
+    "typecheck": "npm run build:packages && npm run typecheck --workspace @ai-evaluator/web && npm run typecheck --workspace @ai-evaluator/worker",
+    "test": "npm run test --workspace @ai-evaluator/web && npm run test --workspace @ai-evaluator/worker",
+    "prepare": "echo workspace ready"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
