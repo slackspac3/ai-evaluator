@@ -71,6 +71,9 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
           <StatusPill status={run.status} />
           <span className="summary-chip">{passedCases} checks passed</span>
           <span className="summary-chip">{run.failedAssertions} checks need attention</span>
+          <a className="button button-secondary" href={`/api/manual-runs?mode=rerun&runId=${run.id}`}>
+            Run This Assessment Again
+          </a>
         </div>
       </section>
 

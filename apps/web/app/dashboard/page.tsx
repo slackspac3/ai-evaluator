@@ -17,10 +17,16 @@ export default async function DashboardPage() {
           <Link className="button button-primary" href="/repositories/repo_demo">
             Open Demo System
           </Link>
+          <a className="button button-secondary" href="/api/manual-runs?mode=demo">
+            Run Sample Assessment
+          </a>
           <Link className="button button-secondary" href="/settings">
             Review Setup
           </Link>
         </div>
+        <p className="muted">
+          Use <strong>Run Sample Assessment</strong> when you want to create a fresh run from the app without editing GitHub.
+        </p>
       </section>
 
       <section className="grid-4">
