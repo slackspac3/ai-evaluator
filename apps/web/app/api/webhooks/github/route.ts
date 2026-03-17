@@ -100,7 +100,9 @@ export async function POST(request: NextRequest) {
     baseSha: payload.pull_request?.base?.sha || "base",
     headSha: payload.pull_request?.head?.sha || "head",
     changedFiles,
-    promptConfigPath: "promptfooconfig.yaml"
+    promptConfigPath: "promptfooconfig.yaml",
+    workingDirectory: process.cwd(),
+    artifactsRoot: getConfig().ARTIFACTS_ROOT
   });
   const run = accepted
     ? await createEvalRun({

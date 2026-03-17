@@ -102,6 +102,8 @@ export type PromptfooExecutionRequest = {
   headSha: string;
   changedFiles: string[];
   promptConfigPath: string;
+  workingDirectory?: string;
+  artifactsRoot?: string;
 };
 
 export type PromptfooExecutionResult = {
@@ -113,4 +115,3 @@ export type PromptfooExecutionResult = {
   failedAssertions: number;
   totalAssertions: number;
 };
-

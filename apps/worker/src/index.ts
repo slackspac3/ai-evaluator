@@ -16,7 +16,9 @@ async function main() {
     baseSha: "abc123",
     headSha: "def456",
     changedFiles: ["prompts/support.yaml", "promptfooconfig.yaml"],
-    promptConfigPath: "promptfooconfig.yaml"
+    promptConfigPath: "promptfooconfig.yaml",
+    workingDirectory: process.cwd(),
+    artifactsRoot: config.ARTIFACTS_ROOT
   });
 
   log("info", "worker processed simulated eval", {
@@ -32,4 +34,3 @@ main().catch((error: unknown) => {
   });
   process.exit(1);
 });
-

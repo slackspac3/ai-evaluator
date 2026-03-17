@@ -16,7 +16,7 @@ Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull 
 - The app now reads its dashboard, repository, pull request, run, settings, and webhook delivery data from PostgreSQL.
 - On first boot it creates the minimum schema automatically and seeds one demo repository, pull request, and run so the UI has real persisted data.
 - The webhook route now stores delivery records, repositories, pull requests, and evaluation runs in Postgres.
-- Promptfoo execution is still stubbed, so new runs persist real metadata and logs but still use placeholder comparison output.
+- Promptfoo execution now attempts a real CLI run when a promptfoo config file is present in the app working directory and the dependency is installed. If either is missing, the run is stored as `skipped` with clear logs instead of fake pass/fail output.
 
 ## Workspace layout
 
@@ -47,3 +47,8 @@ npm run dev
 ```
 
 Additional details are in [`docs/architecture.md`](./docs/architecture.md).
+
+## Promptfoo runtime notes
+
+- For online deployments, set `ARTIFACTS_ROOT=/tmp/ai-evaluator-artifacts` so promptfoo JSON/HTML exports can be written safely.
+- The current MVP still assumes the evaluated promptfoo config is available on disk to the running process. The next step is fetching base/head repo snapshots before execution.
