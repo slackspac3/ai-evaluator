@@ -11,49 +11,49 @@ export default async function DashboardPage() {
   return (
     <div className="stack">
       <section className="hero">
-        <p className="muted">GitHub webhook-driven prompt evaluations with promptfoo execution and Compass-backed models.</p>
-        <h2>Pull request regressions, before-vs-after diffs, and failed assertions in one place.</h2>
+        <p className="muted">AI review workspace for checking prompt changes, model behavior, and release readiness.</p>
+        <h2>See what changed, what passed, and what needs attention without reading raw terminal logs.</h2>
         <div className="hero-actions">
           <Link className="button button-primary" href="/repositories/repo_demo">
-            Open Demo Repository
+            Open Demo System
           </Link>
           <Link className="button button-secondary" href="/settings">
-            Review Integration Settings
+            Review Setup
           </Link>
         </div>
       </section>
 
       <section className="grid-4">
         <div className="panel stat-tile">
-          <span className="muted">Repositories</span>
+          <span className="muted">Systems</span>
           <strong>{dashboard.repositories.length}</strong>
         </div>
         <div className="panel stat-tile">
-          <span className="muted">Recent Runs</span>
+          <span className="muted">Assessments</span>
           <strong>{dashboard.recentRuns.length}</strong>
         </div>
         <div className="panel stat-tile">
-          <span className="muted">Failed Assertions</span>
+          <span className="muted">Checks Needing Review</span>
           <strong>{dashboard.recentRuns.reduce((sum, run) => sum + run.failedAssertions, 0)}</strong>
         </div>
         <div className="panel stat-tile">
-          <span className="muted">Webhook Deliveries</span>
+          <span className="muted">GitHub Events</span>
           <strong>{dashboard.recentDeliveries.length}</strong>
         </div>
       </section>
 
       <section className="panel card">
         <SectionHeader
-          title="Recent Evaluation Runs"
-          subtitle="Runs triggered from GitHub pull requests and pushes, normalized into a developer-friendly review surface."
+          title="Recent Assessments"
+          subtitle="Latest AI checks triggered by pull request and repository changes."
         />
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Run</th>
+                <th>Assessment</th>
                 <th>Status</th>
-                <th>Assertions</th>
+                <th>Checks</th>
                 <th>Changed Files</th>
                 <th>Open</th>
               </tr>
@@ -62,8 +62,8 @@ export default async function DashboardPage() {
               {dashboard.recentRuns.map((run) => (
                 <tr key={run.id}>
                   <td>
-                    <strong>{run.id}</strong>
-                    <div className="muted">{run.summary}</div>
+                    <strong>{run.summary}</strong>
+                    <div className="muted">{run.id}</div>
                   </td>
                   <td>
                     <StatusPill status={run.status} />
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
                   </td>
                   <td>{run.changedFiles.join(", ")}</td>
                   <td>
-                    <Link href={`/runs/${run.id}`}>View run</Link>
+                    <Link href={`/runs/${run.id}`}>View details</Link>
                   </td>
                 </tr>
               ))}
@@ -85,8 +85,8 @@ export default async function DashboardPage() {
       <section className="grid-2">
         <div className="panel card">
           <SectionHeader
-            title="Repositories"
-            subtitle="Connected GitHub repositories that can emit prompt evaluation runs."
+            title="Systems"
+            subtitle="Connected GitHub repositories being monitored for AI prompt changes."
           />
           <ul className="plain-list">
             {dashboard.repositories.map((repository) => (
@@ -98,8 +98,8 @@ export default async function DashboardPage() {
         </div>
         <div className="panel card">
           <SectionHeader
-            title="Webhook Deliveries"
-            subtitle="Recent GitHub webhook traffic and ingestion status."
+            title="GitHub Activity"
+            subtitle="Recent webhook events received from GitHub."
           />
           <ul className="plain-list">
             {dashboard.recentDeliveries.map((delivery) => (

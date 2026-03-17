@@ -144,6 +144,16 @@ textarea {
   margin-top: 1rem;
 }
 
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 0.7rem 0.95rem;
+  border-radius: 999px;
+  color: var(--muted);
+}
+
 .button {
   border: 0;
   border-radius: 999px;
@@ -185,6 +195,10 @@ textarea {
 .card,
 .detail-card {
   padding: 1.2rem;
+}
+
+.compact-stack {
+  gap: 0.8rem;
 }
 
 .stat-tile strong {
@@ -264,6 +278,75 @@ td {
 .detail-list li,
 .plain-list li {
   margin: 0.5rem 0;
+}
+
+.friendly-note {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+  border-radius: 1rem;
+}
+
+.friendly-note strong,
+.case-card h3 {
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.friendly-note p,
+.assertion-message,
+.evidence-card p {
+  margin: 0;
+}
+
+.case-card {
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.case-card-header,
+.assertion-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.assertion-card {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: #f8fafc;
+}
+
+.evidence-card,
+.evidence-output {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+
+.evidence-output {
+  padding: 0.9rem 1rem;
+  margin-top: 0.65rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.technical-details {
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: #fbfcfe;
+  padding: 1rem;
+}
+
+.technical-details summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.technical-log {
+  margin-top: 0.9rem;
 }
 
 .code-block {
