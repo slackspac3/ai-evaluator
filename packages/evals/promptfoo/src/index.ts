@@ -12,6 +12,11 @@ type PromptfooArtifactSpec = {
   logsPath: string;
 };
 
+type PromptfooBinaryResolution = {
+  command: string[] | null;
+  searchedPaths: string[];
+};
+
 function sanitizeSegment(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
@@ -85,12 +90,20 @@ async function resolvePromptfooConfigPath(input: PromptfooExecutionRequest): Pro
   return null;
 }
 
-async function resolvePromptfooBinary(baseDirectory: string): Promise<string[] | null> {
-  const candidates: string[] = [];
+async function resolvePromptfooBinary(baseDirectory: string): Promise<PromptfooBinaryResolution> {
+  const searchedPaths: string[] = [];
   let current = baseDirectory;
 
   for (let depth = 0; depth < 6; depth += 1) {
-    candidates.push(path.join(current, "node_modules", ".bin", "promptfoo"));
+    const binCandidate = path.join(current, "node_modules", ".bin", "promptfoo");
+    const jsCandidate = path.join(current, "node_modules", "promptfoo", "dist", "src", "main.js");
+    searchedPaths.push(binCandidate, jsCandidate);
+    if (await fileExists(binCandidate)) {
+      return { command: [binCandidate], searchedPaths };
+    }
+    if (await fileExists(jsCandidate)) {
+      return { command: ["node", jsCandidate], searchedPaths };
+    }
     const parent = path.dirname(current);
     if (parent === current) {
       break;
@@ -98,13 +111,7 @@ async function resolvePromptfooBinary(baseDirectory: string): Promise<string[] |
     current = parent;
   }
 
-  for (const candidate of candidates) {
-    if (await fileExists(candidate)) {
-      return [candidate];
-    }
-  }
-
-  return null;
+  return { command: null, searchedPaths };
 }
 
 export function buildPromptfooCommand(
@@ -228,7 +235,8 @@ async function runCommand(command: string[], options: { cwd: string; env: NodeJS
 }
 
 async function isPromptfooAvailable(workingDirectory: string): Promise<boolean> {
-  const binaryCommand = (await resolvePromptfooBinary(process.cwd())) || ["npx", "--no-install", "promptfoo"];
+  const resolution = await resolvePromptfooBinary(process.cwd());
+  const binaryCommand = resolution.command || ["npx", "--no-install", "promptfoo"];
   try {
     const result = await runCommand([...binaryCommand, "--version"], {
       cwd: workingDirectory,
@@ -244,7 +252,8 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
   const workingDirectory = input.workingDirectory || process.cwd();
   const configPath = await resolvePromptfooConfigPath(input);
   const artifactsSpec = await ensureArtifactsRoot(input);
-  const binaryCommand = (await resolvePromptfooBinary(process.cwd())) || ["npx", "--no-install", "promptfoo"];
+  const binaryResolution = await resolvePromptfooBinary(process.cwd());
+  const binaryCommand = binaryResolution.command || ["npx", "--no-install", "promptfoo"];
 
   if (!configPath) {
     return {
@@ -270,6 +279,7 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
         `Working directory: ${workingDirectory}`,
         `Promptfoo config: ${configPath}`,
         `Expected binary command: ${binaryCommand.join(" ")}`,
+        `Searched promptfoo paths: ${binaryResolution.searchedPaths.join(", ")}`,
         "Install promptfoo in the runtime environment before enabling live evaluations."
       ],
       cases: [],
