@@ -17,6 +17,7 @@ Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull 
 - On first boot it creates the minimum schema automatically and seeds one demo repository, pull request, and run so the UI has real persisted data.
 - The webhook route now stores delivery records, repositories, pull requests, and evaluation runs in Postgres.
 - Promptfoo execution now attempts a real CLI run when a promptfoo config file is present in the app working directory and the dependency is installed. If either is missing, the run is stored as `skipped` with clear logs instead of fake pass/fail output.
+- When `GITHUB_TOKEN` is configured, the webhook route fetches the actual changed PR files and writes a temporary promptfoo workspace from the PR head revision before execution.
 
 ## Workspace layout
 
@@ -51,4 +52,5 @@ Additional details are in [`docs/architecture.md`](./docs/architecture.md).
 ## Promptfoo runtime notes
 
 - For online deployments, set `ARTIFACTS_ROOT=/tmp/ai-evaluator-artifacts` so promptfoo JSON/HTML exports can be written safely.
-- The current MVP still assumes the evaluated promptfoo config is available on disk to the running process. The next step is fetching base/head repo snapshots before execution.
+- Set `GITHUB_TOKEN` in Vercel so the app can fetch pull request files and promptfoo config content from GitHub.
+- The current MVP now builds a temporary workspace from the PR head revision only. The next step is fetching both base and head snapshots so before-vs-after promptfoo comparisons are real end to end.

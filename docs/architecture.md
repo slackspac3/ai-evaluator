@@ -69,7 +69,7 @@ Deliver the core workflow of `promptfoo-action` as a standalone web product that
 7. Artifacts and logs are persisted.
 8. The web UI displays summaries, diffs, and failure drill-downs.
 
-For the current MVP stage, steps 1 through 5 persist real repository, pull request, run, and delivery records in Postgres. The promptfoo wrapper now invokes the real CLI when a local promptfoo config is available to the runtime. If that config is missing, the run is stored as `skipped` with diagnostic logs instead of simulated pass/fail output. Base/head checkout and full repository snapshot management remain follow-up work.
+For the current MVP stage, steps 1 through 5 persist real repository, pull request, run, and delivery records in Postgres. The webhook layer now fetches real changed-file metadata and promptfoo inputs from the PR head revision when `GITHUB_TOKEN` is configured, and the promptfoo wrapper invokes the real CLI when that temporary workspace and binary are available. If the config or CLI is missing, the run is stored as `skipped` with diagnostic logs instead of simulated pass/fail output. Base/head checkout and full repository snapshot management remain follow-up work.
 
 ## Online MVP tradeoffs
 
