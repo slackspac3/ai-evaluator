@@ -126,7 +126,7 @@ export function buildPromptfooCommand(
     "eval",
     "--config",
     configPath,
-    "--env",
+    "--var",
     `REVISION=${revision}`
   ];
 
@@ -181,7 +181,6 @@ function deriveSummary(status: PromptfooExecutionResult["status"], failedAsserti
 function normalizeArtifacts(spec: PromptfooArtifactSpec): ArtifactRecord[] {
   return [
     { id: "", runId: "", kind: "json", path: spec.jsonOutputPath, sizeBytes: 0, createdAt: "" },
-    { id: "", runId: "", kind: "html", path: spec.htmlOutputPath, sizeBytes: 0, createdAt: "" },
     { id: "", runId: "", kind: "log", path: spec.logsPath, sizeBytes: 0, createdAt: "" }
   ];
 }
@@ -290,7 +289,6 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
   }
 
   const command = buildPromptfooCommand(input, "head", configPath, artifactsSpec.jsonOutputPath, binaryCommand);
-  const htmlCommand = [...binaryCommand, "view", "-y", artifactsSpec.jsonOutputPath, "--output", artifactsSpec.htmlOutputPath];
 
   try {
     const runResult = await runCommand(command, {
@@ -323,11 +321,6 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
       }
     }
 
-    const htmlResult = await runCommand(htmlCommand, {
-      cwd: workingDirectory,
-      env: process.env
-    }).catch(() => ({ exitCode: 1, stdout: "", stderr: "promptfoo view failed" }));
-
     const artifactSpecs = normalizeArtifacts(artifactsSpec);
     const artifacts: ArtifactRecord[] = [];
     for (const artifact of artifactSpecs) {
@@ -344,10 +337,7 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
       `Promptfoo config: ${configPath}`,
       `Command: ${command.join(" ")}`,
       runResult.stdout.trim(),
-      runResult.stderr.trim(),
-      `HTML export command: ${htmlCommand.join(" ")}`,
-      htmlResult.stdout.trim(),
-      htmlResult.stderr.trim()
+      runResult.stderr.trim()
     ].filter(Boolean);
 
     return {

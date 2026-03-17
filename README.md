@@ -17,6 +17,7 @@ Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull 
 - On first boot it creates the minimum schema automatically and seeds one demo repository, pull request, and run so the UI has real persisted data.
 - The webhook route now stores delivery records, repositories, pull requests, and queued evaluation runs in Postgres.
 - Promptfoo execution now attempts a real CLI run when a promptfoo config file is present in the app working directory and the dependency is installed. If either is missing, the run is stored as `skipped` with clear logs instead of fake pass/fail output.
+- The current worker writes JSON artifacts first. HTML export is intentionally disabled for now to stay compatible with the promptfoo CLI version installed in the project.
 - When `GITHUB_TOKEN` is configured, the webhook route fetches the actual changed PR files and writes a temporary promptfoo workspace from the PR head revision before execution.
 
 ## Workspace layout
@@ -67,6 +68,7 @@ Keep that terminal open. When you create or update a pull request, the Vercel ap
 - For online deployments, set `ARTIFACTS_ROOT=/tmp/ai-evaluator-artifacts` so promptfoo JSON/HTML exports can be written safely.
 - Set `GITHUB_TOKEN` in Vercel so the app can fetch pull request files and promptfoo config content from GitHub.
 - Set the same `DATABASE_URL` and `GITHUB_TOKEN` locally before starting the worker so it can read queued runs and fetch PR files.
+- If promptfoo reports a `better-sqlite3` native module mismatch on your laptop, run `npm install` again in the repo so native dependencies rebuild for your current Node version.
 - The current MVP now builds a temporary workspace from the PR head revision only. The next step is fetching both base and head snapshots so before-vs-after promptfoo comparisons are real end to end.
 
 ## Simple GitHub test flow
