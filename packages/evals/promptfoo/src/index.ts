@@ -39,7 +39,8 @@ async function statSize(targetPath: string): Promise<number> {
 }
 
 function buildArtifactsSpec(input: PromptfooExecutionRequest): PromptfooArtifactSpec {
-  const root = path.resolve(input.artifactsRoot || path.join(os.tmpdir(), "ai-evaluator-artifacts"));
+  const configuredRoot = input.artifactsRoot || path.join(os.tmpdir(), "ai-evaluator-artifacts");
+  const root = path.isAbsolute(configuredRoot) ? configuredRoot : path.join(os.tmpdir(), configuredRoot);
   const runSlug = `${sanitizeSegment(input.repositoryFullName)}_${sanitizeSegment(input.baseSha)}_${sanitizeSegment(input.headSha)}`;
   return {
     jsonOutputPath: path.join(root, `${runSlug}.json`),
@@ -49,9 +50,18 @@ function buildArtifactsSpec(input: PromptfooExecutionRequest): PromptfooArtifact
 }
 
 async function ensureArtifactsRoot(input: PromptfooExecutionRequest): Promise<PromptfooArtifactSpec> {
-  const spec = buildArtifactsSpec(input);
-  await mkdir(path.dirname(spec.jsonOutputPath), { recursive: true });
-  return spec;
+  const preferred = buildArtifactsSpec(input);
+  try {
+    await mkdir(path.dirname(preferred.jsonOutputPath), { recursive: true });
+    return preferred;
+  } catch {
+    const fallback = buildArtifactsSpec({
+      ...input,
+      artifactsRoot: path.join(os.tmpdir(), "ai-evaluator-artifacts")
+    });
+    await mkdir(path.dirname(fallback.jsonOutputPath), { recursive: true });
+    return fallback;
+  }
 }
 
 async function resolvePromptfooConfigPath(input: PromptfooExecutionRequest): Promise<string | null> {
