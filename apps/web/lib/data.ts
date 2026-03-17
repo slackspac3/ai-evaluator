@@ -1,4 +1,5 @@
 import {
+  createEvalRun,
   getDashboardData,
   getIntegrationSettings,
   getPullRequestById,
@@ -8,10 +9,13 @@ import {
   listRepositories,
   listRuns,
   listWebhookDeliveries,
-  recordWebhookDelivery
+  recordWebhookDelivery,
+  upsertPullRequest,
+  upsertRepository
 } from "@ai-evaluator/db";
 
 export {
+  createEvalRun,
   getDashboardData,
   getIntegrationSettings,
   getPullRequestById,
@@ -21,5 +25,7 @@ export {
   listRepositories,
   listRuns,
   listWebhookDeliveries,
-  recordWebhookDelivery
+  recordWebhookDelivery,
+  upsertPullRequest,
+  upsertRepository
 };

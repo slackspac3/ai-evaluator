@@ -15,7 +15,8 @@ Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull 
 
 - The app now reads its dashboard, repository, pull request, run, settings, and webhook delivery data from PostgreSQL.
 - On first boot it creates the minimum schema automatically and seeds one demo repository, pull request, and run so the UI has real persisted data.
-- The webhook route stores delivery records in Postgres and still uses a stubbed promptfoo comparison result until the execution step is wired fully.
+- The webhook route now stores delivery records, repositories, pull requests, and evaluation runs in Postgres.
+- Promptfoo execution is still stubbed, so new runs persist real metadata and logs but still use placeholder comparison output.
 
 ## Workspace layout
 

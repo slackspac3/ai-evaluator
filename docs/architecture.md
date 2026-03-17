@@ -69,6 +69,8 @@ Deliver the core workflow of `promptfoo-action` as a standalone web product that
 7. Artifacts and logs are persisted.
 8. The web UI displays summaries, diffs, and failure drill-downs.
 
+For the current MVP stage, steps 1 through 5 persist real repository, pull request, run, and delivery records in Postgres, while the promptfoo comparison itself still returns scaffolded output.
+
 ## Online MVP tradeoffs
 
 - Vercel is acceptable for the web tier and webhook routes.

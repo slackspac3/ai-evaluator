@@ -9,6 +9,7 @@ import type {
   EvalRunRecord,
   EvalRunStatus,
   IntegrationSettings,
+  PromptfooExecutionResult,
   PullRequestRecord,
   RepositoryRecord,
   WebhookDeliveryRecord
@@ -596,4 +597,185 @@ export async function recordWebhookDelivery(input: {
     `,
     [randomUUID(), input.event, input.deliveryId, input.repositoryFullName, input.status, input.reason ?? null]
   );
+}
+
+export async function upsertRepository(input: {
+  id?: string;
+  owner: string;
+  name: string;
+  fullName: string;
+  defaultBranch: string;
+  installationId?: string;
+}): Promise<RepositoryRecord> {
+  await ensureDatabaseReady();
+  const repositoryId = input.id ?? `repo_${input.owner}_${input.name}`.replace(/[^a-zA-Z0-9_]/g, "_");
+  const result = await getPool().query<RepositoryRow>(
+    `
+      INSERT INTO repositories (id, owner, name, full_name, default_branch, installation_id, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (full_name)
+      DO UPDATE SET
+        owner = EXCLUDED.owner,
+        name = EXCLUDED.name,
+        default_branch = EXCLUDED.default_branch,
+        installation_id = EXCLUDED.installation_id,
+        updated_at = NOW()
+      RETURNING *
+    `,
+    [repositoryId, input.owner, input.name, input.fullName, input.defaultBranch, input.installationId ?? null]
+  );
+  return mapRepository(result.rows[0]);
+}
+
+export async function upsertPullRequest(input: {
+  repositoryId: string;
+  githubPrNumber: number;
+  title: string;
+  state: PullRequestRecord["state"];
+  baseSha: string;
+  headSha: string;
+  baseRef: string;
+  headRef: string;
+  authorLogin: string;
+  changedFiles: string[];
+}): Promise<PullRequestRecord> {
+  await ensureDatabaseReady();
+  const pullRequestId = `pr_${input.repositoryId}_${input.githubPrNumber}`;
+  const result = await getPool().query<PullRequestRow>(
+    `
+      INSERT INTO pull_requests (
+        id, repository_id, github_pr_number, title, state, base_sha, head_sha, base_ref, head_ref, author_login, changed_files, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, NOW())
+      ON CONFLICT (id)
+      DO UPDATE SET
+        title = EXCLUDED.title,
+        state = EXCLUDED.state,
+        base_sha = EXCLUDED.base_sha,
+        head_sha = EXCLUDED.head_sha,
+        base_ref = EXCLUDED.base_ref,
+        head_ref = EXCLUDED.head_ref,
+        author_login = EXCLUDED.author_login,
+        changed_files = EXCLUDED.changed_files,
+        updated_at = NOW()
+      RETURNING *
+    `,
+    [
+      pullRequestId,
+      input.repositoryId,
+      input.githubPrNumber,
+      input.title,
+      input.state,
+      input.baseSha,
+      input.headSha,
+      input.baseRef,
+      input.headRef,
+      input.authorLogin,
+      JSON.stringify(input.changedFiles)
+    ]
+  );
+  return mapPullRequest(result.rows[0]);
+}
+
+export async function createEvalRun(input: {
+  repositoryId: string;
+  pullRequestId?: string;
+  baseSha: string;
+  headSha: string;
+  changedFiles: string[];
+  result: PromptfooExecutionResult;
+}): Promise<EvalRunRecord> {
+  await ensureDatabaseReady();
+  const runId = `run_${randomUUID()}`;
+  const runResult = await getPool().query<RunRow>(
+    `
+      INSERT INTO eval_runs (
+        id, repository_id, pull_request_id, base_sha, head_sha, status, summary, failed_assertions, total_assertions, changed_files, logs, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, NOW(), NOW())
+      RETURNING *
+    `,
+    [
+      runId,
+      input.repositoryId,
+      input.pullRequestId ?? null,
+      input.baseSha,
+      input.headSha,
+      input.result.status,
+      input.result.summary,
+      input.result.failedAssertions,
+      input.result.totalAssertions,
+      JSON.stringify(input.changedFiles),
+      JSON.stringify(input.result.logs)
+    ]
+  );
+
+  const insertedArtifacts: ArtifactRow[] = [];
+  for (const artifact of input.result.artifacts) {
+    const artifactId = artifact.id || `artifact_${randomUUID()}`;
+    await getPool().query(
+      `
+        INSERT INTO artifacts (id, run_id, kind, path, size_bytes, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+      `,
+      [artifactId, runId, artifact.kind, artifact.path, artifact.sizeBytes]
+    );
+    insertedArtifacts.push({
+      id: artifactId,
+      run_id: runId,
+      kind: artifact.kind,
+      path: artifact.path,
+      size_bytes: artifact.sizeBytes,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  const insertedCases: EvalCaseRow[] = [];
+  const insertedAssertions: EvalAssertionRow[] = [];
+  for (const evalCase of input.result.cases) {
+    const caseId = evalCase.id || `case_${randomUUID()}`;
+    await getPool().query(
+      `
+        INSERT INTO eval_cases (id, run_id, description, provider, prompt_path)
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [caseId, runId, evalCase.description, evalCase.provider, evalCase.promptPath]
+    );
+    insertedCases.push({
+      id: caseId,
+      run_id: runId,
+      description: evalCase.description,
+      provider: evalCase.provider,
+      prompt_path: evalCase.promptPath
+    });
+    for (const assertion of evalCase.assertions) {
+      const assertionId = assertion.id || `assertion_${randomUUID()}`;
+      await getPool().query(
+        `
+          INSERT INTO eval_assertions (id, case_id, provider, status, score, message, output)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `,
+        [
+          assertionId,
+          caseId,
+          assertion.provider,
+          assertion.status,
+          assertion.score ?? null,
+          assertion.message,
+          assertion.output
+        ]
+      );
+      insertedAssertions.push({
+        id: assertionId,
+        case_id: caseId,
+        provider: assertion.provider,
+        status: assertion.status,
+        score: assertion.score ?? null,
+        message: assertion.message,
+        output: assertion.output
+      });
+    }
+  }
+
+  return buildRun(runResult.rows[0], insertedArtifacts, insertedCases, insertedAssertions);
 }
