@@ -779,3 +779,174 @@ export async function createEvalRun(input: {
 
   return buildRun(runResult.rows[0], insertedArtifacts, insertedCases, insertedAssertions);
 }
+
+export async function createQueuedEvalRun(input: {
+  repositoryId: string;
+  pullRequestId?: string;
+  baseSha: string;
+  headSha: string;
+  changedFiles: string[];
+  logs?: string[];
+  summary?: string;
+}): Promise<EvalRunRecord> {
+  await ensureDatabaseReady();
+  const runId = `run_${randomUUID()}`;
+  const runResult = await getPool().query<RunRow>(
+    `
+      INSERT INTO eval_runs (
+        id, repository_id, pull_request_id, base_sha, head_sha, status, summary, failed_assertions, total_assertions, changed_files, logs, created_at, updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, 'queued', $6, 0, 0, $7::jsonb, $8::jsonb, NOW(), NOW())
+      RETURNING *
+    `,
+    [
+      runId,
+      input.repositoryId,
+      input.pullRequestId ?? null,
+      input.baseSha,
+      input.headSha,
+      input.summary ?? "Queued for local worker execution.",
+      JSON.stringify(input.changedFiles),
+      JSON.stringify(input.logs ?? [])
+    ]
+  );
+
+  return buildRun(runResult.rows[0], [], [], []);
+}
+
+export async function claimNextQueuedRun(): Promise<EvalRunRecord | undefined> {
+  await ensureDatabaseReady();
+  const runResult = await getPool().query<RunRow>(
+    `
+      WITH next_run AS (
+        SELECT id
+        FROM eval_runs
+        WHERE status = 'queued'
+        ORDER BY created_at ASC
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE eval_runs
+      SET status = 'running',
+          summary = 'Promptfoo execution started by local worker.',
+          updated_at = NOW()
+      WHERE id IN (SELECT id FROM next_run)
+      RETURNING *
+    `
+  );
+
+  if (!runResult.rows[0]) {
+    return undefined;
+  }
+
+  return buildRun(runResult.rows[0], [], [], []);
+}
+
+export async function updateEvalRunResult(input: {
+  runId: string;
+  result: PromptfooExecutionResult;
+}): Promise<EvalRunRecord | undefined> {
+  await ensureDatabaseReady();
+  await getPool().query(`DELETE FROM artifacts WHERE run_id = $1`, [input.runId]);
+  await getPool().query(
+    `DELETE FROM eval_assertions WHERE case_id IN (SELECT id FROM eval_cases WHERE run_id = $1)`,
+    [input.runId]
+  );
+  await getPool().query(`DELETE FROM eval_cases WHERE run_id = $1`, [input.runId]);
+
+  const runResult = await getPool().query<RunRow>(
+    `
+      UPDATE eval_runs
+      SET status = $2,
+          summary = $3,
+          failed_assertions = $4,
+          total_assertions = $5,
+          logs = $6::jsonb,
+          updated_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `,
+    [
+      input.runId,
+      input.result.status,
+      input.result.summary,
+      input.result.failedAssertions,
+      input.result.totalAssertions,
+      JSON.stringify(input.result.logs)
+    ]
+  );
+
+  if (!runResult.rows[0]) {
+    return undefined;
+  }
+
+  const insertedArtifacts: ArtifactRow[] = [];
+  for (const artifact of input.result.artifacts) {
+    const artifactId = artifact.id || `artifact_${randomUUID()}`;
+    await getPool().query(
+      `
+        INSERT INTO artifacts (id, run_id, kind, path, size_bytes, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+      `,
+      [artifactId, input.runId, artifact.kind, artifact.path, artifact.sizeBytes]
+    );
+    insertedArtifacts.push({
+      id: artifactId,
+      run_id: input.runId,
+      kind: artifact.kind,
+      path: artifact.path,
+      size_bytes: artifact.sizeBytes,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  const insertedCases: EvalCaseRow[] = [];
+  const insertedAssertions: EvalAssertionRow[] = [];
+  for (const evalCase of input.result.cases) {
+    const caseId = evalCase.id || `case_${randomUUID()}`;
+    await getPool().query(
+      `
+        INSERT INTO eval_cases (id, run_id, description, provider, prompt_path)
+        VALUES ($1, $2, $3, $4, $5)
+      `,
+      [caseId, input.runId, evalCase.description, evalCase.provider, evalCase.promptPath]
+    );
+    insertedCases.push({
+      id: caseId,
+      run_id: input.runId,
+      description: evalCase.description,
+      provider: evalCase.provider,
+      prompt_path: evalCase.promptPath
+    });
+
+    for (const assertion of evalCase.assertions) {
+      const assertionId = assertion.id || `assertion_${randomUUID()}`;
+      await getPool().query(
+        `
+          INSERT INTO eval_assertions (id, case_id, provider, status, score, message, output)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `,
+        [
+          assertionId,
+          caseId,
+          assertion.provider,
+          assertion.status,
+          assertion.score ?? null,
+          assertion.message,
+          assertion.output
+        ]
+      );
+      insertedAssertions.push({
+        id: assertionId,
+        case_id: caseId,
+        provider: assertion.provider,
+        status: assertion.status,
+        score: assertion.score ?? null,
+        message: assertion.message,
+        output: assertion.output
+      });
+    }
+  }
+
+  return buildRun(runResult.rows[0], insertedArtifacts, insertedCases, insertedAssertions);
+}

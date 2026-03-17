@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@ai-evaluator/config": "file:../../packages/config",
+    "@ai-evaluator/db": "file:../../packages/db",
     "@ai-evaluator/evals-promptfoo": "file:../../packages/evals/promptfoo",
+    "@ai-evaluator/integrations-github": "file:../../packages/integrations/github",
     "@ai-evaluator/jobs": "file:../../packages/jobs",
     "@ai-evaluator/logger": "file:../../packages/logger",
     "promptfoo": "^0.112.7"

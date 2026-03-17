@@ -15,7 +15,7 @@ Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull 
 
 - The app now reads its dashboard, repository, pull request, run, settings, and webhook delivery data from PostgreSQL.
 - On first boot it creates the minimum schema automatically and seeds one demo repository, pull request, and run so the UI has real persisted data.
-- The webhook route now stores delivery records, repositories, pull requests, and evaluation runs in Postgres.
+- The webhook route now stores delivery records, repositories, pull requests, and queued evaluation runs in Postgres.
 - Promptfoo execution now attempts a real CLI run when a promptfoo config file is present in the app working directory and the dependency is installed. If either is missing, the run is stored as `skipped` with clear logs instead of fake pass/fail output.
 - When `GITHUB_TOKEN` is configured, the webhook route fetches the actual changed PR files and writes a temporary promptfoo workspace from the PR head revision before execution.
 
@@ -49,10 +49,24 @@ npm run dev
 
 Additional details are in [`docs/architecture.md`](./docs/architecture.md).
 
+## Local worker
+
+The Vercel app now queues runs for a separate local worker.
+
+To process queued runs on your machine:
+
+```bash
+cd /Users/bhavuk.arora/ai-assessment-portal
+npm run dev --workspace @ai-evaluator/worker
+```
+
+Keep that terminal open. When you create or update a pull request, the Vercel app writes a queued run to Postgres and the local worker picks it up.
+
 ## Promptfoo runtime notes
 
 - For online deployments, set `ARTIFACTS_ROOT=/tmp/ai-evaluator-artifacts` so promptfoo JSON/HTML exports can be written safely.
 - Set `GITHUB_TOKEN` in Vercel so the app can fetch pull request files and promptfoo config content from GitHub.
+- Set the same `DATABASE_URL` and `GITHUB_TOKEN` locally before starting the worker so it can read queued runs and fetch PR files.
 - The current MVP now builds a temporary workspace from the PR head revision only. The next step is fetching both base and head snapshots so before-vs-after promptfoo comparisons are real end to end.
 
 ## Simple GitHub test flow

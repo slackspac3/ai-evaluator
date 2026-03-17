@@ -8,7 +8,9 @@
     "baseUrl": ".",
     "paths": {
       "@ai-evaluator/config": ["../../packages/config/src/index.ts"],
+      "@ai-evaluator/db": ["../../packages/db/src/index.ts"],
       "@ai-evaluator/evals-promptfoo": ["../../packages/evals/promptfoo/src/index.ts"],
+      "@ai-evaluator/integrations-github": ["../../packages/integrations/github/src/index.ts"],
       "@ai-evaluator/jobs": ["../../packages/jobs/src/index.ts"],
       "@ai-evaluator/logger": ["../../packages/logger/src/index.ts"],
       "@ai-evaluator/types": ["../../packages/types/src/index.ts"]

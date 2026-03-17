@@ -1,5 +1,7 @@
 import {
   createEvalRun,
+  createQueuedEvalRun,
+  claimNextQueuedRun,
   getDashboardData,
   getIntegrationSettings,
   getPullRequestById,
@@ -10,12 +12,15 @@ import {
   listRuns,
   listWebhookDeliveries,
   recordWebhookDelivery,
+  updateEvalRunResult,
   upsertPullRequest,
   upsertRepository
 } from "@ai-evaluator/db";
 
 export {
   createEvalRun,
+  createQueuedEvalRun,
+  claimNextQueuedRun,
   getDashboardData,
   getIntegrationSettings,
   getPullRequestById,
@@ -26,6 +31,7 @@ export {
   listRuns,
   listWebhookDeliveries,
   recordWebhookDelivery,
+  updateEvalRunResult,
   upsertPullRequest,
   upsertRepository
 };

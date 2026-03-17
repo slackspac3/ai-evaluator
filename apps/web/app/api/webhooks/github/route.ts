@@ -1,66 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 
 import { getConfig } from "@ai-evaluator/config";
 import {
   extractPushChangedFiles,
   extractRelevantFiles,
-  fetchRepositoryFile,
   listPullRequestFiles,
   logWebhook,
-  resolvePromptfooConfigPath,
   verifyGitHubSignature
 } from "@ai-evaluator/integrations-github";
-import { executePromptfooComparison } from "@ai-evaluator/evals-promptfoo";
-import { createEvalRun, recordWebhookDelivery, upsertPullRequest, upsertRepository } from "@/lib/data";
-
-async function createPromptfooWorkspace(input: {
-  owner: string;
-  repo: string;
-  headRef: string;
-  token?: string;
-  changedFiles: string[];
-}): Promise<{ workingDirectory?: string; promptConfigPath: string; logs: string[] }> {
-  const promptConfigPath = resolvePromptfooConfigPath(input.changedFiles);
-  if (!input.token) {
-    return {
-      promptConfigPath,
-      logs: ["GITHUB_TOKEN is not configured, so the app could not fetch PR files from GitHub."]
-    };
-  }
-
-  const filesToFetch = Array.from(new Set([promptConfigPath, ...input.changedFiles]));
-  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "ai-evaluator-pr-"));
-  const logs: string[] = [`Created temporary workspace: ${workspaceRoot}`];
-
-  for (const filePath of filesToFetch) {
-    const content = await fetchRepositoryFile({
-      owner: input.owner,
-      repo: input.repo,
-      path: filePath,
-      ref: input.headRef,
-      token: input.token
-    });
-
-    if (content === null) {
-      logs.push(`Skipped missing file at head revision: ${filePath}`);
-      continue;
-    }
-
-    const absolutePath = path.join(workspaceRoot, filePath);
-    await mkdir(path.dirname(absolutePath), { recursive: true });
-    await writeFile(absolutePath, content, "utf8");
-    logs.push(`Fetched file from GitHub: ${filePath}`);
-  }
-
-  return {
-    workingDirectory: workspaceRoot,
-    promptConfigPath,
-    logs
-  };
-}
+import { createQueuedEvalRun, recordWebhookDelivery, upsertPullRequest, upsertRepository } from "@/lib/data";
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
@@ -199,34 +147,20 @@ export async function POST(request: NextRequest) {
     const headRef = payload.pull_request?.head?.sha || payload.after || "head";
     const baseRef = payload.pull_request?.base?.sha || payload.before || "base";
 
-    const workspace = accepted
-      ? await createPromptfooWorkspace({
-          owner: resolvedOwner,
-          repo: name,
-          headRef,
-          token: config.GITHUB_TOKEN,
-          changedFiles
-        })
-      : { promptConfigPath: "promptfooconfig.yaml", logs: [] as string[] };
-
-    const result = await executePromptfooComparison({
-      repositoryFullName,
-      baseSha: baseRef,
-      headSha: headRef,
-      changedFiles,
-      promptConfigPath: workspace.promptConfigPath,
-      workingDirectory: workspace.workingDirectory || process.cwd(),
-      artifactsRoot: config.ARTIFACTS_ROOT
-    });
-    result.logs = [...workspace.logs, ...result.logs];
     const run = accepted
-      ? await createEvalRun({
+      ? await createQueuedEvalRun({
           repositoryId: repository.id,
           pullRequestId,
           baseSha: baseRef,
           headSha: headRef,
           changedFiles,
-          result
+          summary: "Queued for local worker execution.",
+          logs: [
+            `Webhook accepted for ${repositoryFullName}.`,
+            `Queued on event: ${event}.`,
+            `Base revision: ${baseRef}`,
+            `Head revision: ${headRef}`
+          ]
         })
       : null;
 
@@ -236,7 +170,7 @@ export async function POST(request: NextRequest) {
       repositoryId: repository.id,
       pullRequestId,
       runId: run?.id,
-      result
+      status: run?.status ?? "ignored"
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unhandled webhook processing error";
