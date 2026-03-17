@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { getConfig } from "@ai-evaluator/config";
 import {
+  extractPushChangedFiles,
   extractRelevantFiles,
   fetchRepositoryFile,
   listPullRequestFiles,
@@ -87,6 +88,14 @@ export async function POST(request: NextRequest) {
       head?: { sha?: string; ref?: string };
       changed_files?: number;
     };
+    commits?: Array<{
+      added?: string[];
+      modified?: string[];
+      removed?: string[];
+    }>;
+    before?: string;
+    after?: string;
+    ref?: string;
     changed_files?: string[];
   };
   const repositoryFullName = payload.repository?.full_name || "unknown/unknown";
@@ -118,7 +127,8 @@ export async function POST(request: NextRequest) {
   const [owner = "unknown", name = "unknown"] = repositoryFullName.split("/");
   const prNumber = payload.pull_request?.number || payload.number;
 
-  let sourceChangedFiles = payload.changed_files || ["promptfooconfig.yaml"];
+  let sourceChangedFiles =
+    event === "push" ? extractPushChangedFiles(payload.commits || []) : payload.changed_files || ["promptfooconfig.yaml"];
   if (config.GITHUB_TOKEN && prNumber) {
     try {
       sourceChangedFiles = await listPullRequestFiles({
@@ -149,6 +159,14 @@ export async function POST(request: NextRequest) {
       reason: accepted ? undefined : "No relevant prompt or config changes detected"
     });
 
+  if (event !== "pull_request" && event !== "push") {
+    return NextResponse.json({
+      accepted: false,
+      ignored: true,
+      reason: `Unsupported webhook event: ${event}`
+    });
+  }
+
   const repository = await upsertRepository({
     id: payload.repository?.id ? `repo_${payload.repository.id}` : undefined,
     owner,
@@ -175,11 +193,14 @@ export async function POST(request: NextRequest) {
     pullRequestId = pullRequest.id;
   }
 
+  const headRef = payload.pull_request?.head?.sha || payload.after || "head";
+  const baseRef = payload.pull_request?.base?.sha || payload.before || "base";
+
   const workspace = accepted
     ? await createPromptfooWorkspace({
         owner,
         repo: name,
-        headRef: payload.pull_request?.head?.sha || "head",
+        headRef,
         token: config.GITHUB_TOKEN,
         changedFiles
       })
@@ -187,8 +208,8 @@ export async function POST(request: NextRequest) {
 
   const result = await executePromptfooComparison({
     repositoryFullName,
-    baseSha: payload.pull_request?.base?.sha || "base",
-    headSha: payload.pull_request?.head?.sha || "head",
+    baseSha: baseRef,
+    headSha: headRef,
     changedFiles,
     promptConfigPath: workspace.promptConfigPath,
     workingDirectory: workspace.workingDirectory || process.cwd(),
@@ -199,8 +220,8 @@ export async function POST(request: NextRequest) {
     ? await createEvalRun({
         repositoryId: repository.id,
         pullRequestId,
-        baseSha: payload.pull_request?.base?.sha || "base",
-        headSha: payload.pull_request?.head?.sha || "head",
+        baseSha: baseRef,
+        headSha: headRef,
         changedFiles,
         result
       })

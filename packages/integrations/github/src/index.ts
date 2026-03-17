@@ -26,6 +26,18 @@ export function extractRelevantFiles(changedFiles: string[]): string[] {
   return changedFiles.filter((file) => CHANGE_PATTERNS.some((pattern) => pattern.test(file)));
 }
 
+export function extractPushChangedFiles(
+  commits: Array<{ added?: string[]; modified?: string[]; removed?: string[] }> = []
+): string[] {
+  const files = new Set<string>();
+  for (const commit of commits) {
+    for (const file of [...(commit.added || []), ...(commit.modified || []), ...(commit.removed || [])]) {
+      files.add(file);
+    }
+  }
+  return Array.from(files);
+}
+
 export function buildWebhookSummary(event: string, repositoryFullName: string): string {
   return `${event} webhook received for ${repositoryFullName}`;
 }

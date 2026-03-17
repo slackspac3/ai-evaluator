@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 
-import { extractRelevantFiles, resolvePromptfooConfigPath, verifyGitHubSignature } from "@ai-evaluator/integrations-github";
+import {
+  extractPushChangedFiles,
+  extractRelevantFiles,
+  resolvePromptfooConfigPath,
+  verifyGitHubSignature
+} from "@ai-evaluator/integrations-github";
 
 test("extractRelevantFiles keeps prompt and config files", () => {
   const result = extractRelevantFiles(["README.md", "prompts/support.yaml", "docs/architecture.md", "promptfooconfig.json"]);
@@ -25,4 +30,13 @@ test("resolvePromptfooConfigPath prefers changed config files", () => {
   ]);
 
   assert.equal(result, "configs/promptfooconfig.yaml");
+});
+
+test("extractPushChangedFiles flattens commit changes", () => {
+  const result = extractPushChangedFiles([
+    { added: ["prompts/new.yaml"], modified: ["README.md"], removed: [] },
+    { added: [], modified: ["promptfooconfig.yaml"], removed: ["old.json"] }
+  ]);
+
+  assert.deepEqual(result, ["prompts/new.yaml", "README.md", "promptfooconfig.yaml", "old.json"]);
 });
