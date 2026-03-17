@@ -85,18 +85,37 @@ async function resolvePromptfooConfigPath(input: PromptfooExecutionRequest): Pro
   return null;
 }
 
-function getPromptfooBinaryCommand(): string[] {
-  return ["npx", "--no-install", "promptfoo"];
+async function resolvePromptfooBinary(baseDirectory: string): Promise<string[] | null> {
+  const candidates: string[] = [];
+  let current = baseDirectory;
+
+  for (let depth = 0; depth < 6; depth += 1) {
+    candidates.push(path.join(current, "node_modules", ".bin", "promptfoo"));
+    const parent = path.dirname(current);
+    if (parent === current) {
+      break;
+    }
+    current = parent;
+  }
+
+  for (const candidate of candidates) {
+    if (await fileExists(candidate)) {
+      return [candidate];
+    }
+  }
+
+  return null;
 }
 
 export function buildPromptfooCommand(
   input: PromptfooExecutionRequest,
   revision: "base" | "head",
   configPath = input.promptConfigPath,
-  outputPath?: string
+  outputPath?: string,
+  binaryCommand: string[] = ["npx", "--no-install", "promptfoo"]
 ): string[] {
   const command = [
-    ...getPromptfooBinaryCommand(),
+    ...binaryCommand,
     "eval",
     "--config",
     configPath,
@@ -209,8 +228,9 @@ async function runCommand(command: string[], options: { cwd: string; env: NodeJS
 }
 
 async function isPromptfooAvailable(workingDirectory: string): Promise<boolean> {
+  const binaryCommand = (await resolvePromptfooBinary(process.cwd())) || ["npx", "--no-install", "promptfoo"];
   try {
-    const result = await runCommand([...getPromptfooBinaryCommand(), "--version"], {
+    const result = await runCommand([...binaryCommand, "--version"], {
       cwd: workingDirectory,
       env: process.env
     });
@@ -224,6 +244,7 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
   const workingDirectory = input.workingDirectory || process.cwd();
   const configPath = await resolvePromptfooConfigPath(input);
   const artifactsSpec = await ensureArtifactsRoot(input);
+  const binaryCommand = (await resolvePromptfooBinary(process.cwd())) || ["npx", "--no-install", "promptfoo"];
 
   if (!configPath) {
     return {
@@ -248,7 +269,7 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
       logs: [
         `Working directory: ${workingDirectory}`,
         `Promptfoo config: ${configPath}`,
-        `Expected binary command: ${getPromptfooBinaryCommand().join(" ")}`,
+        `Expected binary command: ${binaryCommand.join(" ")}`,
         "Install promptfoo in the runtime environment before enabling live evaluations."
       ],
       cases: [],
@@ -258,8 +279,8 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
     };
   }
 
-  const command = buildPromptfooCommand(input, "head", configPath, artifactsSpec.jsonOutputPath);
-  const htmlCommand = [...getPromptfooBinaryCommand(), "view", "-y", artifactsSpec.jsonOutputPath, "--output", artifactsSpec.htmlOutputPath];
+  const command = buildPromptfooCommand(input, "head", configPath, artifactsSpec.jsonOutputPath, binaryCommand);
+  const htmlCommand = [...binaryCommand, "view", "-y", artifactsSpec.jsonOutputPath, "--output", artifactsSpec.htmlOutputPath];
 
   try {
     const runResult = await runCommand(command, {

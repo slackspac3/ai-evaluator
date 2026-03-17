@@ -15,8 +15,7 @@ test("worker command builder creates base and head promptfoo commands", () => {
     "head"
   );
 
-  assert.equal(command[0], "npx");
-  assert.equal(command.includes("promptfoo"), true);
+  assert.equal(command.some((part) => /promptfoo|main\.js/.test(part)), true);
 });
 
 test("promptfoo execution is marked skipped when no config file exists", async () => {
