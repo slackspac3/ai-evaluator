@@ -54,3 +54,20 @@ Additional details are in [`docs/architecture.md`](./docs/architecture.md).
 - For online deployments, set `ARTIFACTS_ROOT=/tmp/ai-evaluator-artifacts` so promptfoo JSON/HTML exports can be written safely.
 - Set `GITHUB_TOKEN` in Vercel so the app can fetch pull request files and promptfoo config content from GitHub.
 - The current MVP now builds a temporary workspace from the PR head revision only. The next step is fetching both base and head snapshots so before-vs-after promptfoo comparisons are real end to end.
+
+## Simple GitHub test flow
+
+The repo now includes:
+
+- `promptfooconfig.yaml`
+- `prompts/support-assistant.txt`
+
+For a simple non-technical test:
+
+1. Open the repo on GitHub.
+2. Open `prompts/support-assistant.txt`.
+3. Click the pencil icon.
+4. Change one line, for example add `Keep answers factual.` under the second line.
+5. Choose `Create a new branch for this commit and start a pull request`.
+6. Create the pull request.
+7. Open the deployed app dashboard and inspect the newest run.
