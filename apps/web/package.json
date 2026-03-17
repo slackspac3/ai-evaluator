@@ -21,6 +21,7 @@
     "@ai-evaluator/types": "file:../../packages/types",
     "@ai-evaluator/ui": "file:../../packages/ui",
     "next": "^15.2.0",
+    "promptfoo": "^0.112.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   }
