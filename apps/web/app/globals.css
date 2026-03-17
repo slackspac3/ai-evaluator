@@ -290,6 +290,12 @@ td {
   border-radius: 1rem;
 }
 
+.ai-summary-card {
+  background:
+    radial-gradient(circle at top right, rgba(31, 107, 69, 0.12), transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, #eef8f0 100%);
+}
+
 .friendly-note strong,
 .case-card h3 {
   display: block;

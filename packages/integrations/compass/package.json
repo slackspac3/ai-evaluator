@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@ai-evaluator/config": "file:../../config"
+    "@ai-evaluator/config": "file:../../config",
+    "@ai-evaluator/types": "file:../../types"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

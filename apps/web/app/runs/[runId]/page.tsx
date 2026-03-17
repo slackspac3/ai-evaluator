@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { summarizeAssessmentForExecutive } from "@ai-evaluator/integrations-compass";
 import { getRunById } from "@/lib/data";
 import { SectionHeader, StatusPill } from "@/components/section";
 
@@ -68,6 +69,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
   if (!run) {
     notFound();
   }
+  const aiExecutiveSummary = await summarizeAssessmentForExecutive(run).catch(() => null);
 
   const totalCases = run.cases.length;
   const passedCases = run.cases.filter((evalCase) => evalCase.assertions.every((assertion) => assertion.status === "pass")).length;
@@ -138,6 +140,12 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
             subtitle="Plain-language outcome, risk posture, and what to do next."
           />
           <div className="stack compact-stack">
+            {aiExecutiveSummary ? (
+              <div className="friendly-note ai-summary-card">
+                <strong>Compass GPT-5.1 executive summary</strong>
+                <p>{aiExecutiveSummary}</p>
+              </div>
+            ) : null}
             <div className="friendly-note">
               <strong>Assessment outcome</strong>
               <p>{buildOutcomeLine(run.status, run.failedAssertions, run.totalAssertions)}</p>

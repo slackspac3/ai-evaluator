@@ -23,6 +23,8 @@ Self-hosted AI assurance product modeled on `promptfoo-action`, designed for Git
 - When `GITHUB_TOKEN` is configured, the webhook route fetches the actual changed PR files and writes a temporary promptfoo workspace from the PR head revision before execution.
 - The sample `promptfooconfig.yaml` is now wired for Compass GPT-5.1 through Core42's OpenAI-compatible API base URL.
 - The homepage is now a wizard-led assessment launcher rather than a dashboard redirect.
+- A Vercel route at `/api/compass` can act as a secure proxy for browser-facing Compass usage.
+- Assessment reports can now ask Compass GPT-5.1 for an executive summary when `COMPASS_API_KEY` is configured.
 
 ## Workspace layout
 

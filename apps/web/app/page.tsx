@@ -67,6 +67,7 @@ export default function HomePage() {
             </p>
             <div className="hero-actions">
               <span className="summary-chip">Compass GPT-5.1 ready</span>
+              <span className="summary-chip">Vercel Compass proxy included</span>
               <span className="summary-chip">Executive + technical reports</span>
               <span className="summary-chip">Wizard-led for non-technical reviewers</span>
             </div>
@@ -238,6 +239,13 @@ export default function HomePage() {
           <p className="muted">
             Detailed model outputs, prompts, evidence files, checks, and technical notes for reviewers who need the full
             trace.
+          </p>
+        </div>
+        <div className="panel card">
+          <h3>Compass-powered summaries</h3>
+          <p className="muted">
+            The platform can now use Compass GPT-5.1 to turn technical findings into a concise executive summary for
+            non-technical stakeholders.
           </p>
         </div>
       </section>
