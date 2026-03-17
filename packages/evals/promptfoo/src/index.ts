@@ -4,7 +4,7 @@ import { constants as fsConstants } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
-import type { ArtifactRecord, PromptfooExecutionRequest, PromptfooExecutionResult } from "@ai-evaluator/types";
+import type { ArtifactRecord, EvalAssertion, EvalCase, PromptfooExecutionRequest, PromptfooExecutionResult } from "@ai-evaluator/types";
 
 type PromptfooArtifactSpec = {
   jsonOutputPath: string;
@@ -16,6 +16,8 @@ type PromptfooBinaryResolution = {
   command: string[] | null;
   searchedPaths: string[];
 };
+
+type ParsedPromptfooResult = Pick<PromptfooExecutionResult, "failedAssertions" | "totalAssertions" | "summary" | "cases">;
 
 function sanitizeSegment(value: string): string {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -178,6 +180,18 @@ function deriveSummary(status: PromptfooExecutionResult["status"], failedAsserti
   return `Promptfoo completed successfully with ${totalAssertions} passing assertions.`;
 }
 
+function stripAnsi(text: string): string {
+  return text.replace(/\u001b\[[0-9;]*m/g, "");
+}
+
+function normalizeLogLines(chunks: string[]): string[] {
+  return chunks
+    .flatMap((chunk) => stripAnsi(chunk).split("\n"))
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .filter((line) => !/^Group \{groupId\}/.test(line));
+}
+
 function normalizeArtifacts(spec: PromptfooArtifactSpec): ArtifactRecord[] {
   return [
     { id: "", runId: "", kind: "json", path: spec.jsonOutputPath, sizeBytes: 0, createdAt: "" },
@@ -185,19 +199,109 @@ function normalizeArtifacts(spec: PromptfooArtifactSpec): ArtifactRecord[] {
   ];
 }
 
-function parsePromptfooOutput(raw: unknown, fallbackStatus: PromptfooExecutionResult["status"]): Pick<
-  PromptfooExecutionResult,
-  "failedAssertions" | "totalAssertions" | "summary"
-> {
+function parsePromptfooOutput(raw: unknown, fallbackStatus: PromptfooExecutionResult["status"]): ParsedPromptfooResult {
+  const record = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const resultsRoot =
+    record.results && typeof record.results === "object" ? (record.results as Record<string, unknown>) : {};
+  const resultItems = Array.isArray(resultsRoot.results) ? (resultsRoot.results as Array<Record<string, unknown>>) : [];
+  const stats =
+    resultsRoot.stats && typeof resultsRoot.stats === "object" ? (resultsRoot.stats as Record<string, unknown>) : {};
+
+  const failures = typeof stats.failures === "number" ? stats.failures : undefined;
+  const successes = typeof stats.successes === "number" ? stats.successes : undefined;
+  const errors = typeof stats.errors === "number" ? stats.errors : undefined;
+
+  const cases: EvalCase[] = resultItems.map((item, index) => {
+    const providerId =
+      item.provider && typeof item.provider === "object" && typeof (item.provider as Record<string, unknown>).id === "string"
+        ? String((item.provider as Record<string, unknown>).id)
+        : "promptfoo";
+    const promptPath =
+      item.prompt && typeof item.prompt === "object" && typeof (item.prompt as Record<string, unknown>).label === "string"
+        ? String((item.prompt as Record<string, unknown>).label)
+        : "prompt";
+    const testCase =
+      item.testCase && typeof item.testCase === "object" ? (item.testCase as Record<string, unknown>) : {};
+    const vars = testCase.vars && typeof testCase.vars === "object" ? (testCase.vars as Record<string, unknown>) : {};
+    const description =
+      typeof vars.customer_question === "string"
+        ? String(vars.customer_question)
+        : `Promptfoo test case ${index + 1}`;
+    const responseOutput =
+      item.response && typeof item.response === "object" && typeof (item.response as Record<string, unknown>).output === "string"
+        ? String((item.response as Record<string, unknown>).output)
+        : "";
+    const grading =
+      item.gradingResult && typeof item.gradingResult === "object"
+        ? (item.gradingResult as Record<string, unknown>)
+        : {};
+    const components = Array.isArray(grading.componentResults)
+      ? (grading.componentResults as Array<Record<string, unknown>>)
+      : [];
+
+    const assertions: EvalAssertion[] =
+      components.length > 0
+        ? components.map((component, componentIndex) => {
+            const assertionConfig =
+              component.assertion && typeof component.assertion === "object"
+                ? (component.assertion as Record<string, unknown>)
+                : {};
+            const assertionType = typeof assertionConfig.type === "string" ? assertionConfig.type : "assertion";
+            const assertionValue = typeof assertionConfig.value === "string" ? assertionConfig.value : "";
+            return {
+              id: String(item.id || `assertion-${index + 1}-${componentIndex + 1}`),
+              caseId: String(item.id || `case-${index + 1}`),
+              provider: assertionType,
+              status: component.pass === true ? "pass" : "fail",
+              score: typeof component.score === "number" ? component.score : undefined,
+              message: typeof component.reason === "string" ? component.reason : "Promptfoo assertion result",
+              output: assertionValue ? `${responseOutput}\n\nExpected: ${assertionValue}` : responseOutput
+            };
+          })
+        : [
+            {
+              id: String(item.id || `assertion-${index + 1}`),
+              caseId: String(item.id || `case-${index + 1}`),
+              provider: providerId,
+              status: item.success === true ? "pass" : "fail",
+              score: typeof item.score === "number" ? item.score : undefined,
+              message:
+                typeof grading.reason === "string"
+                  ? grading.reason
+                  : item.success === true
+                    ? "All promptfoo assertions passed"
+                    : "Promptfoo reported a failure",
+              output: responseOutput
+            }
+          ];
+
+    return {
+      id: String(item.id || `case-${index + 1}`),
+      runId: "",
+      description,
+      provider: providerId,
+      promptPath,
+      assertions
+    };
+  });
+
   const totalAssertions =
-    findNumberDeep(raw, ["total", "tests", "totalTests", "assertions", "totalAssertions"]) ?? 0;
+    cases.reduce((count, evalCase) => count + evalCase.assertions.length, 0) ||
+    findNumberDeep(raw, ["total", "tests", "totalTests", "assertions", "totalAssertions"]) ||
+    0;
   const failedAssertions =
-    findNumberDeep(raw, ["failures", "failed", "failedTests", "failedAssertions"]) ?? 0;
+    cases.reduce((count, evalCase) => count + evalCase.assertions.filter((assertion) => assertion.status === "fail").length, 0) ||
+    failures ||
+    findNumberDeep(raw, ["failures", "failed", "failedTests", "failedAssertions"]) ||
+    0;
+  const succeededAssertions = successes ?? totalAssertions - failedAssertions - (errors ?? 0);
+  const effectiveTotalAssertions = totalAssertions || Math.max(succeededAssertions + failedAssertions + (errors ?? 0), 0);
 
   return {
     failedAssertions,
-    totalAssertions,
-    summary: deriveSummary(fallbackStatus, failedAssertions, totalAssertions)
+    totalAssertions: effectiveTotalAssertions,
+    summary: deriveSummary(fallbackStatus, failedAssertions, effectiveTotalAssertions),
+    cases
   };
 }
 
@@ -316,6 +420,43 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
         if (failedAssertions > 0) {
           status = "failed";
         }
+        if (failedAssertions === 0 && totalAssertions > 0) {
+          status = "passed";
+        }
+        const cases = normalized.cases.map((evalCase) => ({
+          ...evalCase,
+          assertions: evalCase.assertions.map((assertion, index) => ({
+            ...assertion,
+            id: `${evalCase.id}-assertion-${index + 1}`,
+            caseId: evalCase.id
+          }))
+        }));
+        const logs = normalizeLogLines([
+          `Working directory: ${workingDirectory}`,
+          `Promptfoo config: ${configPath}`,
+          `Command: ${command.join(" ")}`,
+          runResult.stdout,
+          runResult.stderr
+        ]);
+        const artifactSpecs = normalizeArtifacts(artifactsSpec);
+        const artifacts: ArtifactRecord[] = [];
+        for (const artifact of artifactSpecs) {
+          if (await fileExists(artifact.path)) {
+            artifacts.push({
+              ...artifact,
+              sizeBytes: await statSize(artifact.path)
+            });
+          }
+        }
+        return {
+          status,
+          summary,
+          logs,
+          cases,
+          artifacts,
+          failedAssertions,
+          totalAssertions
+        };
       } catch {
         summary = "Promptfoo completed but the JSON artifact could not be parsed into normalized counts.";
       }
@@ -332,13 +473,13 @@ export async function executePromptfooComparison(input: PromptfooExecutionReques
       }
     }
 
-    const logs = [
+    const logs = normalizeLogLines([
       `Working directory: ${workingDirectory}`,
       `Promptfoo config: ${configPath}`,
       `Command: ${command.join(" ")}`,
-      runResult.stdout.trim(),
-      runResult.stderr.trim()
-    ].filter(Boolean);
+      runResult.stdout,
+      runResult.stderr
+    ]);
 
     return {
       status,
