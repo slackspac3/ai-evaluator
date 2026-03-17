@@ -38,19 +38,67 @@ const reportTypes = [
   { id: "both", title: "Both reports", description: "Give decision-makers the summary and reviewers the deeper evidence." }
 ];
 
+const assurancePacks = [
+  {
+    title: "Security and Prompt Injection",
+    description: "Probe for hidden instruction leakage, jailbreaks, prompt injection, and unsafe system behavior."
+  },
+  {
+    title: "Fairness and Bias",
+    description: "Check whether the AI gives unequal, stereotyped, or biased responses across sensitive scenarios."
+  },
+  {
+    title: "Ethics and Safety",
+    description: "Check for harmful advice, unsafe outputs, refusal quality, and policy-aligned behavior."
+  }
+];
+
 export default function HomePage() {
   return (
     <div className="stack">
-      <section className="hero wizard-hero">
-        <p className="muted">Guided assessment wizard</p>
-        <h2>Point, shoot, and let AI test AI for security, fairness, bias, and safety issues.</h2>
-        <p>
-          Pick what kind of AI you are reviewing, choose the risks you care about, and launch an assessment. You will get
-          an executive summary for non-technical readers and technical evidence for reviewers.
-        </p>
+      <section className="hero wizard-hero assurance-hero">
+        <div className="assurance-grid">
+          <div className="stack compact-stack">
+            <p className="muted hero-kicker">AI Assurance Studio</p>
+            <h2>Use AI to test AI for security, fairness, bias, ethics, and safety before it reaches users.</h2>
+            <p className="hero-lead">
+              Launch guided assessments for GitHub prompt changes or live websites with AI features. Get an executive report
+              for decision-makers and a technical report with evidence, prompts, outputs, and checks.
+            </p>
+            <div className="hero-actions">
+              <span className="summary-chip">Compass GPT-5.1 ready</span>
+              <span className="summary-chip">Executive + technical reports</span>
+              <span className="summary-chip">Wizard-led for non-technical reviewers</span>
+            </div>
+          </div>
+          <div className="hero-report-preview">
+            <div className="preview-badge">Assessment Snapshot</div>
+            <h3>AI Support Assistant</h3>
+            <div className="preview-score">
+              <strong>Low risk</strong>
+              <span>2 issues need review before release</span>
+            </div>
+            <ul className="preview-list">
+              <li>Prompt injection resistance: passed</li>
+              <li>Hidden instruction leakage: passed</li>
+              <li>Fairness coverage: needs review</li>
+              <li>Safety refusals: passed</li>
+            </ul>
+          </div>
+        </div>
       </section>
 
       <section className="panel card wizard-panel">
+        <div className="report-band">
+          <div>
+            <p className="wizard-step-label">Point and shoot</p>
+            <h3>Start an assessment without touching GitHub, configs, or raw logs.</h3>
+          </div>
+          <p className="muted">
+            Choose the AI target, select the risks you care about, and the platform queues an assessment with both business
+            and technical reporting in mind.
+          </p>
+        </div>
         <form action="/api/manual-runs" method="get" className="stack">
           <input type="hidden" name="mode" value="guided" />
 
@@ -159,27 +207,38 @@ export default function HomePage() {
 
           <div className="wizard-launch">
             <button className="button button-primary" type="submit">
-              Start Assessment
+              Start AI Assessment
             </button>
             <a className="button button-secondary" href="/dashboard">
-              View existing assessments
+              Review Existing Assessments
             </a>
           </div>
         </form>
       </section>
 
       <section className="grid-3">
+        {assurancePacks.map((pack) => (
+          <div key={pack.title} className="panel card pack-card">
+            <h3>{pack.title}</h3>
+            <p className="muted">{pack.description}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid-2">
         <div className="panel card">
           <h3>Executive report</h3>
-          <p className="muted">Plain-language outcome, top issues, severity, and recommended next steps.</p>
+          <p className="muted">
+            Plain-language outcome, top issues, severity, business impact, and recommended next steps for non-technical
+            reviewers.
+          </p>
         </div>
         <div className="panel card">
           <h3>Technical report</h3>
-          <p className="muted">Detailed model responses, evidence files, checks, and technical notes for reviewers.</p>
-        </div>
-        <div className="panel card">
-          <h3>Website AI testing</h3>
-          <p className="muted">Point the wizard at a website with AI-powered features and queue a live website assessment.</p>
+          <p className="muted">
+            Detailed model outputs, prompts, evidence files, checks, and technical notes for reviewers who need the full
+            trace.
+          </p>
         </div>
       </section>
     </div>

@@ -5,6 +5,25 @@ import { SectionHeader, StatusPill } from "@/components/section";
 
 export const dynamic = "force-dynamic";
 
+function buildPosture(status: string, failedAssertions: number) {
+  if (status === "passed") {
+    return { label: "Low risk", description: "No material issues were detected in this assessment." };
+  }
+  if (status === "queued" || status === "running") {
+    return { label: "In progress", description: "The assessment is still collecting evidence and scoring responses." };
+  }
+  if (status === "skipped") {
+    return { label: "Incomplete", description: "The assessment could not complete the planned checks." };
+  }
+  if (status === "errored") {
+    return { label: "Blocked", description: "A runtime error stopped the assessment before it could finish." };
+  }
+  if (failedAssertions >= 3) {
+    return { label: "High risk", description: "Multiple checks need attention before this AI should move forward." };
+  }
+  return { label: "Needs review", description: "Some checks need follow-up before you treat the AI as ready." };
+}
+
 function buildRecommendation(status: string, failedAssertions: number) {
   if (status === "passed") {
     return "No action needed right now. Keep this prompt set as the current baseline and re-run after future edits.";
@@ -53,6 +72,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
   const totalCases = run.cases.length;
   const passedCases = run.cases.filter((evalCase) => evalCase.assertions.every((assertion) => assertion.status === "pass")).length;
   const findings = run.cases.filter((evalCase) => evalCase.assertions.some((assertion) => assertion.status === "fail"));
+  const posture = buildPosture(run.status, run.failedAssertions);
   const topOutputs = run.cases
     .flatMap((evalCase) =>
       evalCase.assertions
@@ -63,17 +83,32 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
 
   return (
     <div className="stack">
-      <section className="hero">
-        <p className="muted">Assessment Results</p>
+      <section className="hero report-hero">
+        <p className="muted hero-kicker">Assessment Report</p>
         <h2>{run.summary}</h2>
-        <p>{buildOutcomeLine(run.status, run.failedAssertions, run.totalAssertions)}</p>
+        <p className="hero-lead">{posture.description}</p>
         <div className="hero-actions">
           <StatusPill status={run.status} />
+          <span className="summary-chip">{posture.label}</span>
           <span className="summary-chip">{passedCases} checks passed</span>
           <span className="summary-chip">{run.failedAssertions} checks need attention</span>
           <a className="button button-secondary" href={`/api/manual-runs?mode=rerun&runId=${run.id}`}>
             Run This Assessment Again
           </a>
+        </div>
+        <div className="hero-kpi-grid">
+          <div className="hero-kpi">
+            <span>Overall outcome</span>
+            <strong>{buildOutcomeLine(run.status, run.failedAssertions, run.totalAssertions)}</strong>
+          </div>
+          <div className="hero-kpi">
+            <span>Executive view</span>
+            <strong>{posture.label}</strong>
+          </div>
+          <div className="hero-kpi">
+            <span>Technical evidence</span>
+            <strong>{run.artifacts.length} files saved</strong>
+          </div>
         </div>
       </section>
 
@@ -96,16 +131,20 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
         </div>
       </section>
 
-      <section className="grid-2">
-        <div className="panel card">
+      <section className="report-split">
+        <div className="panel card report-section executive-report">
           <SectionHeader
-            title="What Happened"
-            subtitle="A plain-language summary for reviewers who do not want raw terminal output."
+            title="Executive Report"
+            subtitle="Plain-language outcome, risk posture, and what to do next."
           />
           <div className="stack compact-stack">
             <div className="friendly-note">
-              <strong>Outcome</strong>
+              <strong>Assessment outcome</strong>
               <p>{buildOutcomeLine(run.status, run.failedAssertions, run.totalAssertions)}</p>
+            </div>
+            <div className="friendly-note">
+              <strong>Risk posture</strong>
+              <p>{posture.label}. {posture.description}</p>
             </div>
             <div className="friendly-note">
               <strong>Recommended next step</strong>
@@ -113,10 +152,10 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
             </div>
           </div>
         </div>
-        <div className="panel card">
+        <div className="panel card report-section technical-report">
           <SectionHeader
-            title="Evidence Highlights"
-            subtitle="Sample model responses pulled from the assessment run."
+            title="Technical Report"
+            subtitle="Evidence snippets, model outputs, and saved artifacts for reviewers."
           />
           <div className="stack compact-stack">
             {topOutputs.length > 0 ? (
@@ -133,7 +172,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
         </div>
       </section>
 
-      <section className="panel card">
+      <section className="panel card report-section">
         <SectionHeader
           title="Checks Reviewed"
           subtitle="Each row below represents a user-friendly review item from the assessment."
@@ -173,7 +212,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
       </section>
 
       <section className="grid-2">
-        <div className="panel card">
+        <div className="panel card report-section">
           <SectionHeader title="Evidence Files" subtitle="Saved files that can be used for deeper review or export." />
           <ul className="plain-list">
             {run.artifacts.map((artifact) => (
@@ -183,7 +222,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ runI
             ))}
           </ul>
         </div>
-        <div className="panel card">
+        <div className="panel card report-section">
           <SectionHeader title="Technical Details" subtitle="Expandable raw execution notes for engineering review." />
           <details className="technical-details">
             <summary>Show technical execution log</summary>

@@ -4,7 +4,10 @@ prompts:
   - file://prompts/support-assistant.txt
 
 providers:
-  - openai:gpt-4.1
+  - id: openai:gpt-5.1
+    config:
+      apiBaseUrl: https://api.core42.ai/v1
+      apiKey: "{{ env.COMPASS_API_KEY }}"
 
 tests:
   - vars:

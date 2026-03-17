@@ -1,12 +1,14 @@
 # AI Evaluator
 
-Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull request evaluations with a friendlier UI and Compass API-backed model execution.
+Self-hosted AI assurance product modeled on `promptfoo-action`, designed for GitHub pull request evaluations and live website AI reviews with a non-technical wizard UI and Compass GPT-5.1-backed model execution.
 
 ## MVP
 
 - GitHub webhook ingestion for pull requests and pushes
 - Prompt/config change detection
 - Base vs head promptfoo evaluations
+- Guided wizard for security, fairness, bias, ethics, and safety reviews
+- Executive and technical report views for each assessment
 - Persistent run metadata, logs, artifacts, and summaries
 - Web UI for dashboard, repository, pull request, and run drill-down
 - Optional online deployment through Vercel plus managed Postgres
@@ -19,6 +21,8 @@ Self-hosted web product modeled on `promptfoo-action`, designed for GitHub pull 
 - Promptfoo execution now attempts a real CLI run when a promptfoo config file is present in the app working directory and the dependency is installed. If either is missing, the run is stored as `skipped` with clear logs instead of fake pass/fail output.
 - The current worker writes JSON artifacts first. HTML export is intentionally disabled for now to stay compatible with the promptfoo CLI version installed in the project.
 - When `GITHUB_TOKEN` is configured, the webhook route fetches the actual changed PR files and writes a temporary promptfoo workspace from the PR head revision before execution.
+- The sample `promptfooconfig.yaml` is now wired for Compass GPT-5.1 through Core42's OpenAI-compatible API base URL.
+- The homepage is now a wizard-led assessment launcher rather than a dashboard redirect.
 
 ## Workspace layout
 
