@@ -9,6 +9,9 @@
     "pg": "^8.13.3",
     "@ai-evaluator/types": "file:../types"
   },
+  "devDependencies": {
+    "@types/pg": "^8.11.11"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json",
