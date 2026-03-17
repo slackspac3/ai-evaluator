@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createQueuedEvalRun, getRunById, listPullRequests, listRepositories } from "@/lib/data";
 
+function formatChoice(value: string) {
+  return value.replaceAll("-", " ").replaceAll("_", " ");
+}
+
 async function createDemoRun(request: NextRequest) {
   const repositories = await listRepositories();
   const repository = repositories[0];
@@ -20,6 +24,42 @@ async function createDemoRun(request: NextRequest) {
     summary: "Queued sample assessment from the portal.",
     logs: [
       "This run was started manually from the dashboard.",
+      "The local worker will pick it up automatically."
+    ]
+  });
+
+  return NextResponse.redirect(new URL(`/runs/${run.id}`, request.url));
+}
+
+async function createGuidedRun(request: NextRequest) {
+  const repositories = await listRepositories();
+  const repository = repositories[0];
+  if (!repository) {
+    return NextResponse.json({ error: "No repository is available for a guided assessment." }, { status: 404 });
+  }
+
+  const pullRequests = await listPullRequests(repository.id);
+  const pullRequest = pullRequests[0];
+  const systemType = request.nextUrl.searchParams.get("systemType") || "customer-support-chatbot";
+  const reportType = request.nextUrl.searchParams.get("reportType") || "both";
+  const concerns = request.nextUrl.searchParams.getAll("concern");
+  const selectedConcerns = concerns.length > 0 ? concerns : ["security"];
+
+  const concernLabel = selectedConcerns.map(formatChoice).join(", ");
+  const systemLabel = formatChoice(systemType);
+  const reportLabel = formatChoice(reportType);
+
+  const run = await createQueuedEvalRun({
+    repositoryId: repository.id,
+    pullRequestId: pullRequest?.id,
+    baseSha: pullRequest?.baseSha || "guided-base",
+    headSha: pullRequest?.headSha || "guided-head",
+    changedFiles: pullRequest?.changedFiles || ["promptfooconfig.yaml", "prompts/support-assistant.txt"],
+    summary: `Queued ${concernLabel} assessment for a ${systemLabel}.`,
+    logs: [
+      "This run was started from the guided assessment wizard.",
+      `Requested focus areas: ${concernLabel}.`,
+      `Requested report type: ${reportLabel}.`,
       "The local worker will pick it up automatically."
     ]
   });
@@ -53,6 +93,10 @@ export async function GET(request: NextRequest) {
   const mode = request.nextUrl.searchParams.get("mode");
   if (mode === "demo") {
     return createDemoRun(request);
+  }
+
+  if (mode === "guided") {
+    return createGuidedRun(request);
   }
 
   if (mode === "rerun") {

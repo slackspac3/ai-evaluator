@@ -21,11 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
             </div>
             <nav className="nav">
+              <Link href="/">Start Assessment</Link>
               <Link href="/dashboard">Dashboard</Link>
-              <Link href="/repositories/repo_demo">Repository</Link>
-              <Link href="/pull-requests/pr_42">Pull Request</Link>
-              <Link href="/runs/run_demo_1">Run Detail</Link>
-              <Link href="/assertions">Failed Assertions</Link>
+              <Link href="/repositories/repo_demo">AI System</Link>
+              <Link href="/pull-requests/pr_42">Change Review</Link>
+              <Link href="/runs/run_demo_1">Assessment Report</Link>
+              <Link href="/assertions">Issues</Link>
               <Link href="/settings">Settings</Link>
             </nav>
           </header>
@@ -35,4 +36,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-
