@@ -239,14 +239,15 @@ export async function POST(request: NextRequest) {
       result
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Unhandled webhook processing error";
     const repositoryFullName = "unknown/unknown";
     await recordWebhookDelivery({
       event,
       deliveryId,
       repositoryFullName,
       status: "failed",
-      reason: error instanceof Error ? error.message : "Unhandled webhook processing error"
+      reason: message
     }).catch(() => undefined);
-    return NextResponse.json({ error: "Unhandled webhook processing error" }, { status: 500 });
+    return NextResponse.json({ error: "Unhandled webhook processing error", detail: message }, { status: 500 });
   }
 }
