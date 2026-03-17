@@ -12,6 +12,26 @@ const systemTypes = [
   { id: "knowledge-assistant", title: "Knowledge assistant" }
 ];
 
+const targetTypes = [
+  {
+    id: "github-change",
+    title: "A prompt or config change",
+    description: "Use this when you want to review a GitHub change before release."
+  },
+  {
+    id: "live-website",
+    title: "A live website with AI features",
+    description: "Use this when the AI exists on a website as a chatbot, assistant, AI search, or summary feature."
+  }
+];
+
+const websiteFeatureTypes = [
+  { id: "ai-assistant", title: "AI assistant or chatbot" },
+  { id: "ai-search", title: "AI search or answer box" },
+  { id: "ai-summary", title: "AI summaries or recommendations" },
+  { id: "ai-writing", title: "AI writing or help feature" }
+];
+
 const reportTypes = [
   { id: "executive", title: "Executive report", description: "Plain-language summary, issues found, and what to do next." },
   { id: "technical", title: "Technical report", description: "Detailed evidence, logs, and model outputs for reviewers." },
@@ -37,6 +57,25 @@ export default function HomePage() {
           <div className="wizard-step">
             <div>
               <p className="wizard-step-label">Step 1</p>
+              <h3>What are you testing?</h3>
+              <p className="muted">Choose whether you are reviewing a GitHub change or a live website with AI features.</p>
+            </div>
+            <div className="wizard-option-grid">
+              {targetTypes.map((option, index) => (
+                <label key={option.id} className="wizard-option-card">
+                  <input type="radio" name="targetType" value={option.id} defaultChecked={index === 0} />
+                  <span>
+                    <strong>{option.title}</strong>
+                    <small>{option.description}</small>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="wizard-step">
+            <div>
+              <p className="wizard-step-label">Step 2</p>
               <h3>What kind of AI are you checking?</h3>
               <p className="muted">Choose the closest match. This helps the assessment use the right tone and examples.</p>
             </div>
@@ -54,7 +93,35 @@ export default function HomePage() {
 
           <div className="wizard-step">
             <div>
-              <p className="wizard-step-label">Step 2</p>
+              <p className="wizard-step-label">Step 3</p>
+              <h3>If this is a live website, what should we check?</h3>
+              <p className="muted">You can fill this in now. If you are reviewing a GitHub change, you can leave it as-is.</p>
+            </div>
+            <div className="wizard-fields">
+              <label className="wizard-field">
+                <span>Website URL</span>
+                <input
+                  type="url"
+                  name="websiteUrl"
+                  placeholder="https://example.com/ai-assistant"
+                />
+              </label>
+              <label className="wizard-field">
+                <span>AI feature type</span>
+                <select name="websiteFeature" defaultValue="ai-assistant">
+                  {websiteFeatureTypes.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="wizard-step">
+            <div>
+              <p className="wizard-step-label">Step 4</p>
               <h3>What do you want to check?</h3>
               <p className="muted">Pick one or more risk areas. The assessment will focus its review on these concerns.</p>
             </div>
@@ -73,7 +140,7 @@ export default function HomePage() {
 
           <div className="wizard-step">
             <div>
-              <p className="wizard-step-label">Step 3</p>
+              <p className="wizard-step-label">Step 5</p>
               <h3>What kind of report do you need?</h3>
               <p className="muted">Choose the report style that fits your audience.</p>
             </div>
@@ -111,8 +178,8 @@ export default function HomePage() {
           <p className="muted">Detailed model responses, evidence files, checks, and technical notes for reviewers.</p>
         </div>
         <div className="panel card">
-          <h3>One-click reruns</h3>
-          <p className="muted">You can re-run an existing assessment from its results page without changing GitHub.</p>
+          <h3>Website AI testing</h3>
+          <p className="muted">Point the wizard at a website with AI-powered features and queue a live website assessment.</p>
         </div>
       </section>
     </div>

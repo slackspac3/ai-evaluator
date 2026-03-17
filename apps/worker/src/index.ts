@@ -57,6 +57,26 @@ async function createPromptfooWorkspace(input: {
 }
 
 async function processRun(run: EvalRunRecord): Promise<void> {
+  if (run.baseSha === "website-baseline" && run.headSha === "website-live") {
+    await updateEvalRunResult({
+      runId: run.id,
+      result: {
+        status: "skipped",
+        summary: "Live website AI assessments are queued successfully, but browser-based execution is not wired into the worker yet.",
+        logs: [
+          ...run.logs,
+          "The assessment was recognized as a live website AI review.",
+          "Next implementation step: add browser automation so the worker can open the page, interact with the AI feature, and store evidence."
+        ],
+        cases: [],
+        artifacts: [],
+        failedAssertions: 0,
+        totalAssertions: 0
+      }
+    });
+    return;
+  }
+
   const config = getConfig();
   const repository = await getRepositoryById(run.repositoryId);
   if (!repository) {

@@ -40,14 +40,46 @@ async function createGuidedRun(request: NextRequest) {
 
   const pullRequests = await listPullRequests(repository.id);
   const pullRequest = pullRequests[0];
+  const targetType = request.nextUrl.searchParams.get("targetType") || "github-change";
   const systemType = request.nextUrl.searchParams.get("systemType") || "customer-support-chatbot";
   const reportType = request.nextUrl.searchParams.get("reportType") || "both";
+  const websiteUrl = request.nextUrl.searchParams.get("websiteUrl") || "";
+  const websiteFeature = request.nextUrl.searchParams.get("websiteFeature") || "ai-assistant";
   const concerns = request.nextUrl.searchParams.getAll("concern");
   const selectedConcerns = concerns.length > 0 ? concerns : ["security"];
 
   const concernLabel = selectedConcerns.map(formatChoice).join(", ");
   const systemLabel = formatChoice(systemType);
   const reportLabel = formatChoice(reportType);
+  const targetLabel = formatChoice(targetType);
+
+  const logs = [
+    "This run was started from the guided assessment wizard.",
+    `Requested target type: ${targetLabel}.`,
+    `Requested focus areas: ${concernLabel}.`,
+    `Requested report type: ${reportLabel}.`
+  ];
+
+  if (targetType === "live-website") {
+    if (!websiteUrl) {
+      return NextResponse.json({ error: "websiteUrl is required for live website assessments." }, { status: 400 });
+    }
+
+    logs.push(`Website URL: ${websiteUrl}`);
+    logs.push(`AI feature type: ${formatChoice(websiteFeature)}.`);
+    logs.push("The local worker will check this queued live website assessment.");
+
+    const run = await createQueuedEvalRun({
+      repositoryId: repository.id,
+      baseSha: "website-baseline",
+      headSha: "website-live",
+      changedFiles: [],
+      summary: `Queued ${concernLabel} assessment for a live website AI feature.`,
+      logs
+    });
+
+    return NextResponse.redirect(new URL(`/runs/${run.id}`, request.url));
+  }
 
   const run = await createQueuedEvalRun({
     repositoryId: repository.id,
@@ -56,12 +88,7 @@ async function createGuidedRun(request: NextRequest) {
     headSha: pullRequest?.headSha || "guided-head",
     changedFiles: pullRequest?.changedFiles || ["promptfooconfig.yaml", "prompts/support-assistant.txt"],
     summary: `Queued ${concernLabel} assessment for a ${systemLabel}.`,
-    logs: [
-      "This run was started from the guided assessment wizard.",
-      `Requested focus areas: ${concernLabel}.`,
-      `Requested report type: ${reportLabel}.`,
-      "The local worker will pick it up automatically."
-    ]
+    logs: [...logs, "The local worker will pick it up automatically."]
   });
 
   return NextResponse.redirect(new URL(`/runs/${run.id}`, request.url));
