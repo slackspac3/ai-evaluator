@@ -15,8 +15,8 @@
     "@ai-evaluator/config": "file:../../packages/config",
     "@ai-evaluator/db": "file:../../packages/db",
     "@ai-evaluator/evals-promptfoo": "file:../../packages/evals/promptfoo",
-    "@ai-evaluator/integrations-github": "file:../../packages/integrations/github",
     "@ai-evaluator/integrations-compass": "file:../../packages/integrations/compass",
+    "@ai-evaluator/integrations-github": "file:../../packages/integrations/github",
     "@ai-evaluator/logger": "file:../../packages/logger",
     "@ai-evaluator/types": "file:../../packages/types",
     "@ai-evaluator/ui": "file:../../packages/ui",
@@ -24,5 +24,10 @@
     "promptfoo": "^0.112.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
   }
 }
